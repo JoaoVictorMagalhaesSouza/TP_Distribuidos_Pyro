@@ -278,3 +278,38 @@ class Server:
 
         except db_error:
             return("=====> [ERRO NO BANCO] Nao foi possivel exibir o album.")
+    
+    @Pyro4.expose
+    def deletaCarta(self, nomeCarta, idMochila):
+        # <>deletar carta
+        # <UPDATE mochila_has_carta SET numero = numero - 1 WHERE Mochila_idMochila = resultados[6]>
+        #print(f'Nome da carta é {nomeCarta}')
+        queryExisteCarta = f"SELECT idCarta FROM Carta WHERE nome = '{nomeCarta.strip()}';"
+        #cursor = connection.cursor()
+        self.cursor.execute(queryExisteCarta)
+        verificacao = self.cursor.fetchall()
+        # return verificacao
+
+        if len(verificacao) > 0:  # a carta passada (nome) é válida
+            try:
+                # verificar se ele possui um mochila_has_carta para essa carta.
+                idCarta = verificacao[0][0]
+                queryPossuiCarta = f"SELECT numero FROM Mochila_has_Carta WHERE Mochila_idMochila = '{idMochila}' and Carta_idCarta = '{idCarta}';"
+                #cursor = connection.cursor()
+                self.cursor.execute(queryPossuiCarta)
+                verificacao = self.cursor.fetchall()
+                if len(verificacao) > 0:
+                    numero = verificacao[0][0]
+                    # print('O numero é', numero)
+                    if numero > 0:
+                        # signiifica que ele tem a carta.
+                        queryDecrementaNumero = f"UPDATE Mochila_has_Carta SET numero = numero - 1 WHERE Mochila_idMochila = '{idMochila}' and Carta_idCarta = '{idCarta}';"
+                        self.cursor.execute(queryDecrementaNumero)
+                        self.connection.commit()
+                        return (f"=====> Uma carta de ({nomeCarta}) cujo id eh {idCarta} deleta com sucesso!")
+                    else:
+                        return("=====> [ERRO] Voce nao tem nenhuma carta dessas!")
+                else:
+                    return("=====> [ERRO] Você nao tem nenhuma carta dessas!")
+            except db_error:
+                return("=====> [ERRO NO BANCO] Erro na delecao da carta")

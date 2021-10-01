@@ -183,6 +183,14 @@ class Cliente:
                             for i in myCards:
                                 print(f"{j}) {i}")
                                 j += 1
+                    
+                    elif (escolha=="5"):
+                        carta = input(
+                                'Digite o nome da carta: ')
+                        print('A carta escolhida é:', carta)
+                        print(self.connection.deletaCarta(carta,str(self.authIDMochila)))
+                        print("")
+                        print("")
 
 
         
