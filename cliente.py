@@ -75,10 +75,10 @@ class Cliente:
                     print("")
                     print("")
             
-        elif (escolha == 3):
+        elif (escolha == "3"):
             exit
 
-        while (escolha != 3):
+        while (escolha != "3"):
             if (dadosLogin!=0):
                 while True:
                     print("*****************************************************************")
@@ -263,6 +263,66 @@ class Cliente:
 
                         print("")
                         print("")
+                    elif (escolha=="0"):
+                        break
+        
+            print("#################################################################")
+            print("#    Olá ! Seja bem vindo ao Programming Language Collection    #")
+            print("#    1) Fazer cadastro.                                         #")
+            print("#    2) Fazer login.                                            #")
+            print("#    3) Sair do sistema.                                        #")   
+            print("#################################################################")
+            print("")
+            print("")
+            escolha = input("Digite a operação: ")
+            if (escolha == "1"):
+                    print("#################################################################")
+                    print("#                   INFORMAÇÕES DE CADASTRO                     #")
+                    print("#################################################################")
+                    nick = input("Digite seu nickname: ")
+                    senha = input("Digite sua senha: ")
+                    nome = input("Digite seu nome: ")
+                    email = input("Digite seu email: ")
+                    """
+                        Agora a gente chama diretamente o método.
+                    """
+                    print(self.connection.cadastro("50000",nick,senha,nome,email))
+                    print("")
+                    print("")
+            elif (escolha == "2"):
+                    print("#################################################################")
+                    print("#                     INFORMAÇÕES DE LOGIN                      #")
+                    print("#################################################################")
+                    nick = input("Digite seu nickname: ")
+                    senha = input("Digite sua senha: ")               
+                    #print(self.connection.login(nick,senha))
+                    """
+                        Agora a gente chama diretamente o método.
+                    """
+                    dadosLogin = self.connection.login(nick,senha)
+                    #print(dadosLogin)
+                    if (dadosLogin != 0):
+                        print("=====> Login efetuado com sucesso !")
+                        """
+                            Armazenando as informações de login nos atributos da classe. Como se fosse o LocalStorage da WEB.
+                        """
+                        self.authID = dadosLogin[0]
+                        self.authCoins = dadosLogin[1]
+                        self.authNickname = dadosLogin[2]
+                        self.authPassword = dadosLogin[3]
+                        self.authName = dadosLogin[4]
+                        self.authEmail = dadosLogin[5]
+                        self.authIDMochila = dadosLogin[6]
+                        self.authIDAlbum = dadosLogin[7]                               
+                        
+                    else:
+                        print("=====> [ERRO] Credenciais de login inválidas! Tente novamente")
+                        print("")
+                        print("")
+                
+            elif (escolha == "3"):
+                exit 
+
 
 
         
