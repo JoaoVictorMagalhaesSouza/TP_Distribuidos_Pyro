@@ -191,6 +191,13 @@ class Cliente:
                         print(self.connection.deletaCarta(carta,str(self.authIDMochila)))
                         print("")
                         print("")
+                    elif (escolha == "6"):
+                        carta = input(
+                            'Digite o nome da carta: ')
+                        print('A carta escolhida é:', carta)
+                        print(self.connection.retiraCartaAlbum(carta,str(self.authIDMochila),str(self.authIDAlbum)))
+                        print("")
+                        print("")
 
 
         

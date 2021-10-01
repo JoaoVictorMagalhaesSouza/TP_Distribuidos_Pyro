@@ -313,3 +313,42 @@ class Server:
                     return("=====> [ERRO] Você nao tem nenhuma carta dessas!")
             except db_error:
                 return("=====> [ERRO NO BANCO] Erro na delecao da carta")
+    @Pyro4.expose
+    def retiraCartaAlbum(self, nomeCarta, idMochila, idAlbum):
+        # <>retirar carta do album --> incremnta do mochila_has_carta e faz is_ocupado ser 0
+        # SELECT is_ocupado FROM Album_has_Slot WHERE Album_idAlbum = 1 and Slot_Carta_idCarta = x;
+        # SELECT idCarta FROM Carta WHERE nome = {nomeCarta};
+        #print(f'Nome da carta é {nomeCarta}')
+        queryExisteCarta = f"SELECT idCarta FROM Carta WHERE nome = '{nomeCarta.strip()}';"
+
+        #cursor = connection.cursor()
+        self.cursor.execute(queryExisteCarta)
+        verificacao = self.cursor.fetchall()
+        # return verificacao
+
+        if len(verificacao) > 0:  # a carta passada (nome) é válida
+            try:
+                idCarta = verificacao[0][0]
+                # print('O id da carta é', idCarta)  # certo
+                queryExisteSlotOcupado = f"SELECT is_ocupado FROM Album_has_Slot WHERE Album_idAlbum = '{idAlbum}' and Slot_Carta_idCarta = '{idCarta}';"
+                #cursor = connection.cursor()
+                self.cursor.execute(queryExisteSlotOcupado)
+                verificacao = self.cursor.fetchall()  # verificação indica se usuário tem a carta como 1
+                if (verificacao[0][0] == 1):
+                    #print('Eu tenho essa carta!')
+                    queryRetiraAlbum = f"UPDATE Album_has_Slot SET is_ocupado = 0 WHERE Album_idAlbum = '{idAlbum}' and Slot_Carta_idCarta = '{idCarta}';"
+                    self.cursor.execute(queryRetiraAlbum)
+                    self.connection.commit()
+
+                    queryAdicionaMochila = f"UPDATE Mochila_has_Carta SET numero = numero + 1 WHERE Mochila_idMochila = '{idMochila}' and Carta_idCarta = '{idCarta}';"
+                    self.cursor.execute(queryAdicionaMochila)
+                    self.connection.commit()
+                    return (f"=====> Carta {nomeCarta} de id {idCarta} retirada com sucesso!")
+                    # OBS: essa função considera que para o usuário, o Mochila_has_Carta vai
+                    # existir. Assim, o atributo "numero" é pelo menos 0.
+                else:
+                    return('=====> [ERRO] Você nao tem essa carta!')
+            except db_error:
+                return("=====> [ERRO NO BANCO]Erro ao retirar carta do album")
+        else:
+            return('=====> [ERRO] Essa carta nao existe!')
