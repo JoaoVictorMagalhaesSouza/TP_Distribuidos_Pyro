@@ -198,6 +198,79 @@ class Cliente:
                         print(self.connection.retiraCartaAlbum(carta,str(self.authIDMochila),str(self.authIDAlbum)))
                         print("")
                         print("")
+                    elif (escolha == "7"):
+                        print("Bem vindo ao leilão!")
+                        print("1) Anunciar uma Carta")
+                        print("2) Comprar/Visualizar Cartas à Venda")
+                        print("3) Retirar uma carta anunciada.")
+                        escolhaLeilao = input(
+                            "Escolha uma funcionalidade: ")
+                        # Ver se já possui uma carta anunciada.
+                        if (escolhaLeilao == "1"):
+                            respostaCartasMochila = self.connection.minhaMochila(str(self.authIDMochila))
+                            
+                            if (respostaCartasMochila=="0"):
+                                print("=====> Não ha cartas na mochila!")
+                            else:
+                                print(f"As cartas que você pode anunciar são: ")
+                                respostaCartasMochila = respostaCartasMochila
+                                    
+                                j = 0
+                                for i in respostaCartasMochila:
+                                    print(f"{i}")
+                                    j += 1
+
+                                cartaAnunciada = input(
+                                    "Digite o nome da carta a ser anunciada: ")
+                                precoCarta = input(
+                                    "Especifique por quanto deseja leiloar essa carta: ")
+
+                                print(self.connection.colocaCartaLeilao(str(self.authIDMochila),cartaAnunciada,precoCarta))
+                            print("")
+                            print("")
+
+                        elif (escolhaLeilao == "2"):
+                            
+                            respostaCartasLeilao = self.connection.mostraCartasLeilao()
+                            if (respostaCartasLeilao==0):
+                                print("=====> Não há cartas anunciadas no leilao!")
+                            else:
+                                print("Cartas à venda: ")
+                                
+                                for i in range(len(respostaCartasLeilao["idVenda"])):
+                                    print(
+                                        f""" => ID: {respostaCartasLeilao["idVenda"][i]}    |    Nome do Vendedor: {respostaCartasLeilao["Nome"][i]}   |   Carta: {respostaCartasLeilao["Carta"][i]}   |   Preço: {respostaCartasLeilao["Preco"][i]}""")
+
+                                escolhaComprar = input(
+                                    "Deseja comprar alguma carta ? 1-Sim | 2-Não :")
+                                if (escolhaComprar == "1"):
+                                    print(f"Você possui {self.authCoins} coins.")
+                                    cartaDesejada = int(
+                                        input("Digite o id da compra que contém sua carta de interesse: "))
+                                    print("A carta desejada é "+respostaCartasLeilao["Carta"][cartaDesejada]+", vendida por "+respostaCartasLeilao["Nome"][cartaDesejada]+" no valor de "+str(
+                                        respostaCartasLeilao["Preco"][cartaDesejada])+" coins.")
+                                    if (int(self.authCoins) >= int(respostaCartasLeilao["Preco"][cartaDesejada])):
+                                        print(self.connection.vendeLeilao(str(self.authIDMochila),str(respostaCartasLeilao["Nome"][cartaDesejada])))
+                                    else:
+                                        print(
+                                            "=====> [ERRO] Você não possui moedas suficientes para comprar esta carta.")
+                        elif (escolhaLeilao == "3"):
+                            retiraLeilao = input(
+                                "Tem certeza que deseja remover a carta anunciada ? 1 - Sim | Outro - Não: ")
+
+                            if (retiraLeilao == "1"):
+                                mensagemRetiraLeilao = "retiraCartaLeilao:" + \
+                                    resposta[7]
+                                self.__tcp.send(
+                                    bytes(mensagemRetiraLeilao, 'ascii'))
+                                respostaRetiraLeilao = self.__tcp.recv(
+                                    2048)
+                                respostaRetiraLeilao = respostaRetiraLeilao.decode(
+                                    'ascii')
+                                print(respostaRetiraLeilao)
+
+                        print("")
+                        print("")
 
 
         

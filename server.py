@@ -352,3 +352,183 @@ class Server:
                 return("=====> [ERRO NO BANCO]Erro ao retirar carta do album")
         else:
             return('=====> [ERRO] Essa carta nao existe!')
+    
+    @Pyro4.expose
+    def colocaCartaLeilao(self, idMochila, carta, precoCarta):
+        try:
+            """
+                Primeiro vamos verificar se o usuario já possui cartas no leilão, pois ele só pode anunciar 1 carta por vez.
+            """
+            queryVerificaLeilao = "SELECT * FROM leilao WHERE (Mochila_has_Carta_Mochila_idMochila = '"+str(
+                idMochila)+"');"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryVerificaLeilao)
+            verificacao = self.cursor.fetchall()
+            if (len(verificacao) > 0):  # Significa que o usuário já possui carta no leilão
+                carta = []
+                nomeCarta = ""
+                for i in verificacao:
+                    carta.append(i[2])
+                for i in carta:
+                    query = "SELECT * FROM carta WHERE (idCarta = '" + \
+                        str(i)+"');"
+                    #print(f"Q1: {query}")
+                    #cursor = connection.cursor()
+                    self.cursor.execute(query)
+                    verificacao = self.cursor.fetchall()
+                    for j in verificacao:
+                        nomeCarta = (j[1])
+                return(f"=====> [ERRO] Voce ja possui uma carta anunciada: {nomeCarta}")
+            else:
+                """
+                    Criar o leilão para aquele user.
+                """
+                """
+                    Primeiro pesquisar o id da carta a ser leiloada
+                """
+                queryIdCarta = "SELECT idCarta FROM carta WHERE (nome = '"+str(
+                    carta)+"');"
+                #print(f"Q2: {queryIdCarta}")
+                #cursor = connection.cursor()
+                self.cursor.execute(queryIdCarta)
+                verificacao = self.cursor.fetchall()
+                for i in verificacao:
+                    idCarta = verificacao[0]
+                novo = []
+                for x in idCarta:
+                    idCarta = str(x)
+                # print(f"{idCarta}")
+                queryCriaLeilao = "INSERT INTO leilao (Mochila_has_Carta_Mochila_idMochila,Mochila_has_Carta_Carta_idCarta,precoCarta) VALUES ('"+str(
+                    idMochila)+"','"+str(idCarta)+"','"+str(precoCarta)+"');"
+                #print(f"Q3: {queryCriaLeilao}")
+                result = self.cursor.execute(queryCriaLeilao)
+                self.connection.commit()
+                """
+                    Carta inserida no leilão, remover da mochila.
+                """
+                queryRemocao = "UPDATE mochila_has_carta SET numero = numero - 1 WHERE (Mochila_idMochila = '"""+str(
+                    idMochila)+"' and Carta_idCarta = '"+str(idCarta)+"');"
+                #print(f"Q4: {queryRemocao}")
+                result = self.cursor.execute(queryRemocao)
+                self.connection.commit()
+                return("=====> Carta leiloada com sucesso. ")
+        except db_error:
+            return("=====> [ERRO NO BANCO]Erro ao anunciar carta no leilao!")
+    
+    @Pyro4.expose
+    def mostraCartasLeilao(self):
+        try:
+            queryMostraCartas = "SELECT * FROM leilao;"
+            #print(f"Q2: {queryMostraCartas}")
+            #cursor = connection.cursor()
+            self.cursor.execute(queryMostraCartas)
+            verificacao = self.cursor.fetchall()
+            dados = {}
+            nomeCarta = []
+            nomeAnunciante = []
+            precoCarta = []
+            ids = []
+            if(len(verificacao)==0):
+                return(0)
+            else:
+
+                for i in verificacao:
+                    # idMochila.append(i[1])
+                    aux = i[1]  # Qual o usuario ?
+                    query1 = "SELECT * FROM usuario WHERE (Mochila_idMochila = '"+str(
+                        i[1])+"');"
+                    #cursor = self.connection.cursor()
+                    self.cursor.execute(query1)
+                    verificacao2 = self.cursor.fetchall()
+                    for j in verificacao2:
+                        nomeAnunciante.append(j[2])
+
+                    query2 = "SELECT * FROM carta WHERE (idCarta = '" + \
+                        str(i[2])+"');"
+                   # cursor = connection.cursor()
+                    self.cursor.execute(query2)
+                    verificacao3 = self.cursor.fetchall()
+                    for j in verificacao3:
+                        nomeCarta.append(j[1])
+
+                    precoCarta.append(i[3])
+                for i in range(len(verificacao)):
+                    ids.append(i)
+            dados["idVenda"] = ids
+            dados["Nome"] = nomeAnunciante
+            dados["Carta"] = nomeCarta
+            dados["Preco"] = precoCarta
+            return(dados)
+        except db_error:
+            return("=====> [ERRO NO BANCO] Erro ao mostrar cartas leiloadas.")
+    @Pyro4.expose
+    def vendeLeilao(self, idMochilaComprador, nicknameVendedor):
+        try:
+            """
+                Obter informações do vendedor.
+            """
+            queryIDVendedor = "SELECT * FROM usuario WHERE (nickname = '" + \
+                nicknameVendedor+"');"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryIDVendedor)
+            verificacao = self.cursor.fetchall()
+            for i in verificacao:
+                idVendedor = i[0]  # Nickname único
+                mochilaVendedor = i[6]
+
+            """
+                Obter informações sobre a carta a ser comprada.
+            """
+            queryInfoCarta = "SELECT * FROM leilao WHERE (Mochila_has_Carta_Mochila_idMochila = '"+str(
+                mochilaVendedor)+"');"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryInfoCarta)
+            verificacao = self.cursor.fetchall()
+            for i in verificacao:
+                precoCarta = i[3]
+                idCarta = i[2]
+
+            """
+                Removendo do leilão 
+            """
+            queryDeletaLeilao = "DELETE FROM leilao WHERE (Mochila_has_Carta_Mochila_idMochila = '"+str(
+                mochilaVendedor)+"');"
+            result = self.cursor.execute(queryDeletaLeilao)
+            self.connection.commit()
+            """
+                Inserindo a carta na mochila do comprador e debitando as coins dele
+            """
+            queryVerificaCarta = "SELECT * FROM mochila_has_carta WHERE (Mochila_idMochila = '"+str(
+                idMochilaComprador)+"' and Carta_idCarta = '"+str(idCarta)+"');"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryVerificaCarta)
+            verificacao = self.cursor.fetchall()
+            if (len(verificacao) > 0):  # Significa que eu tenho a carta
+                queryInsertCarta = "UPDATE mochila_has_carta SET numero = numero + 1 WHERE (Mochila_idMochila = '"""+str(
+                    idMochilaComprador)+"' and Carta_idCarta = '"+str(idCarta)+"');"
+                result = self.cursor.execute(queryInsertCarta)
+                self.connection.commit()
+            else:
+                queryInsertCarta = "INSERT INTO mochila_has_carta VALUES ('"+str(
+                    idMochilaComprador)+"','"+str(idCarta)+"',1);"
+                result = self.cursor.execute(queryInsertCarta)
+                self.connection.commit()
+
+            queryTiraCoins = "UPDATE usuario SET coins = coins - " + \
+                str(precoCarta)+" WHERE (Mochila_idMochila = '" + \
+                str(idMochilaComprador)+"');"
+            result = self.cursor.execute(queryTiraCoins)
+            self.connection.commit()
+
+            """
+                Inserindo as coins no vendedor
+            """
+            queryInsereCoins = "UPDATE usuario SET coins = coins + " + \
+                str(precoCarta)+" WHERE (Mochila_idMochila = '" + \
+                str(mochilaVendedor)+"');"
+            result = self.cursor.execute(queryInsereCoins)
+            self.connection.commit()
+            return ("=====> Compra realizada com sucesso !")
+
+        except db_error:
+            return ("=====> [ERRO NO BANCO] Erro na transferencia entre as cartas.")
