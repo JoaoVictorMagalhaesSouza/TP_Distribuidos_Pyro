@@ -461,6 +461,7 @@ class Server:
             return(dados)
         except db_error:
             return("=====> [ERRO NO BANCO] Erro ao mostrar cartas leiloadas.")
+
     @Pyro4.expose
     def vendeLeilao(self, idMochilaComprador, nicknameVendedor):
         try:
@@ -532,3 +533,28 @@ class Server:
 
         except db_error:
             return ("=====> [ERRO NO BANCO] Erro na transferencia entre as cartas.")
+    
+    @Pyro4.expose
+    def retiraCartaLeilao(self, idMochila):
+        try:
+            queryBusca = f"SELECT * FROM leilao WHERE ( Mochila_has_Carta_Mochila_idMochila = '{idMochila}');"
+
+            #cursor = connection.cursor()
+            self.cursor.execute(queryBusca)
+            verificacao = self.cursor.fetchall()
+            for i in verificacao:
+                idCarta = i[2]
+
+            if (len(verificacao) > 0):  # Usuario possui carta no leilao
+                queryTiraLeilao = f"DELETE FROM leilao WHERE ( Mochila_has_Carta_Mochila_idMochila = '{idMochila}');"
+                result = self.cursor.execute(queryTiraLeilao)
+                self.connection.commit()
+                queryInsereIV = f"UPDATE mochila_has_carta SET numero = numero + 1 WHERE (Mochila_idMochila = '{idMochila}' and Carta_idCarta = '{idCarta}');"
+                result = self.cursor.execute(queryInsereIV)
+                self.connection.commit()
+                return("=====> Carta removida do leilao com sucesso !")
+            else:
+                return("=====> [ERRO] Voce nao possui carta para retirar !")
+
+        except db_error:
+            return ("=====> [ERRO NO BANCO] Erro ao carregar carta leiloada.")

@@ -259,15 +259,7 @@ class Cliente:
                                 "Tem certeza que deseja remover a carta anunciada ? 1 - Sim | Outro - Não: ")
 
                             if (retiraLeilao == "1"):
-                                mensagemRetiraLeilao = "retiraCartaLeilao:" + \
-                                    resposta[7]
-                                self.__tcp.send(
-                                    bytes(mensagemRetiraLeilao, 'ascii'))
-                                respostaRetiraLeilao = self.__tcp.recv(
-                                    2048)
-                                respostaRetiraLeilao = respostaRetiraLeilao.decode(
-                                    'ascii')
-                                print(respostaRetiraLeilao)
+                                print(self.connection.retiraCartaLeilao(str(self.authIDMochila)))
 
                         print("")
                         print("")
