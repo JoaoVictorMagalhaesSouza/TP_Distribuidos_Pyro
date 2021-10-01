@@ -127,7 +127,35 @@ class Cliente:
                         
                         print("")
                         print("")           
-    
+
+                    elif (escolha=="2"):
+                        respostaCartasMochila = self.connection.minhaMochila(str(self.authIDMochila))
+                        if (respostaCartasMochila == 0):
+                            print(
+                                f"=====> Você ainda não possui cartas na mochila !")
+                        else:
+                            # print(respostaCartasMochila)
+                            print("=====> Suas cartas são: ")
+                            myCards = respostaCartasMochila
+                            j = 0
+                            for i in myCards:
+                                print(f"{j}) {i}")
+                                j += 1
+
+                            """
+                                Tratar aqui depois: deixar o cara digitar apenas uma das cartas mostradas.
+                            """
+                            #print(f"{myCards}    {type(myCards)}")
+                            escolhaCarta = input(
+                                "Digite o nome da carta que você quer inserir no álbum: ")
+                            if (escolhaCarta in myCards):
+                                print(self.connection.insereAlbum(str(self.authIDMochila),str(self.authIDAlbum),str(escolhaCarta)))
+                            else:
+                                print(
+                                    "=====> [ERRO] Digite uma carta que você possui !")
+                        print("")
+                        print("")
+                    
         
 
         

@@ -172,3 +172,77 @@ class Server:
             return("=====> [ERRO NO BANCO] Erro ao comprar carta!")        
         
 
+    @Pyro4.expose
+    def minhaMochila(self, idMochila):
+        try:
+            queryVisualizaMochila = "SELECT * FROM mochila_has_carta WHERE (Mochila_idMochila = '" + \
+                idMochila+"' and numero > 0);"
+            #print(f"Q0: {queryVisualizaMochila}")
+            #cursor = connection.cursor()
+            self.cursor.execute(queryVisualizaMochila)
+            verificacao = self.cursor.fetchall()
+            cartas = []
+            nomeCartas = []
+            for i in verificacao:
+                cartas.append(i[1])
+                #print(i)
+
+            for i in cartas:
+                query = "SELECT * FROM carta WHERE (idCarta = '"+str(i)+"');"
+                #print(f"Q1: {query}")
+                #cursor = connection.cursor()
+                self.cursor.execute(query)
+                verificacao = self.cursor.fetchall()
+                for j in verificacao:
+                    nomeCartas.append(j[1])
+
+            #print(f"Cartas que o usuario possui: {nomeCartas}")
+            if (len(nomeCartas) == 0):
+                return(0)
+            else:
+                return(nomeCartas)
+
+        except db_error:
+            return("=====> [ERRO NO BANCO] Erro ao visualizar dados da mochila do usuário.")
+    @Pyro4.expose
+    def insereAlbum(self, idMochila, idAlbum, nomeCarta):
+        try:
+
+            """
+                Primeiro tirar a carta da mochila.
+            """
+            queryIdentificacao = "SELECT * FROM carta WHERE (nome = '" + \
+                nomeCarta+"');"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryIdentificacao)
+            verificacao = self.cursor.fetchall()
+
+            for i in verificacao:
+                idCarta = i[0]
+            queryRemocao = "UPDATE mochila_has_carta SET numero = numero - 1 WHERE (Mochila_idMochila = '"""+str(
+                idMochila)+"' and Carta_idCarta = '"+str(idCarta)+"');"
+            #print(f"QR {queryRemocao}")
+            result = self.cursor.execute(queryRemocao)
+            self.connection.commit()
+
+            """
+                Verificar se a carta já está lá
+            """
+            queryVerificaAlbum = "SELECT * FROM album_has_slot WHERE (Album_idAlbum = '"+str(
+                idAlbum)+"' and Slot_Carta_idCarta = '"+str(idCarta)+"' and is_ocupado = 0);"
+            #print(f"QV {queryVerificaAlbum}")
+            #cursor = connection.cursor()
+            self.cursor.execute(queryVerificaAlbum)
+            verificacao = self.cursor.fetchall()
+
+            # print(len(verificacao))
+            if (len(verificacao) == 1):  # Significa que a carta ainda não está no Album
+                queryAdicionaAlbum = "UPDATE album_has_slot SET is_ocupado = 1 WHERE (Album_idAlbum = '"+str(
+                    idAlbum)+"' and Slot_Carta_idCarta = '"+str(idCarta)+"');"
+                result = self.cursor.execute(queryAdicionaAlbum)
+                self.connection.commit()
+                return("=====> Carta inserida no album com sucesso!")
+            else:  # Siginifica que a carta já está no album
+                return("=====> [ERRO] Carta ja esta no album.")
+        except db_error:
+            return("=====> [ERRO NO BANCO] Erro ao inserir carta no album.")
