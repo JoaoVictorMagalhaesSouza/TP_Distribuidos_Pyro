@@ -28,6 +28,9 @@ class Server:
                 Pyro4.Daemon.serveSimple({          #Definindo as configurações do servidor
                 Server: 'Servidor',
                 }, host="127.0.0.1", port=9090, ns=False, verbose=True)    
+                """
+                    Ele cria um loop de serviço automaticamente.
+                """
                     
             except:
                 return "Erro ao iniciar a conexão do Server."
