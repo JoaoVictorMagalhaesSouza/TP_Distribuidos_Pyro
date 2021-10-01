@@ -141,7 +141,7 @@ class Cliente:
                                 f"=====> Você ainda não possui cartas na mochila !")
                         else:
                             # print(respostaCartasMochila)
-                            print("=====> Suas cartas são: ")
+                            print("=====> Suas cartas na mochila são: ")
                             myCards = respostaCartasMochila
                             j = 0
                             for i in myCards:
@@ -169,7 +169,21 @@ class Cliente:
                                 print(f"{i}")
                         print("")
                         print("")                    
-        
+                    
+                    elif (escolha=="4"):
+                        respostaCartasMochila2 = self.connection.minhaMochila(str(self.authIDMochila))
+                        if (respostaCartasMochila2 == 0):
+                            print(
+                                f"=====> Você ainda não possui cartas na mochila !")
+                        else:
+                            # print(respostaCartasMochila)
+                            print("=====> Suas cartas na mochila são: ")
+                            myCards = respostaCartasMochila2
+                            j = 0
+                            for i in myCards:
+                                print(f"{j}) {i}")
+                                j += 1
+
 
         
             
