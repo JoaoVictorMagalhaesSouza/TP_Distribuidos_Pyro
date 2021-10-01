@@ -249,3 +249,32 @@ class Server:
                 return("=====> [ERRO] Carta ja esta no album.")
         except db_error:
             return("=====> [ERRO NO BANCO] Erro ao inserir carta no album.")
+    @Pyro4.expose
+    def visualizaAlbum(self, idAlbum):
+        try:
+            # Mostrar somente as cartas que ele colocou no álbum.
+            queryVisualizaAlbum = "SELECT * FROM album_has_slot WHERE (Album_idAlbum = '" + \
+                idAlbum+"' and is_ocupado=1);"
+            #cursor = connection.cursor()
+            self.cursor.execute(queryVisualizaAlbum)
+            verificacao = self.cursor.fetchall()
+            cartas = []
+            nomeCartas = []
+            if (len(verificacao) == 0):
+                return(0)
+            else:
+                for i in verificacao:
+                    cartas.append(i[2])
+                for i in cartas:
+                    query = "SELECT * FROM carta WHERE (idCarta = '" + \
+                        str(i)+"');"
+                    print(f"Q1: {query}")
+                    #cursor = connection.cursor()
+                    self.cursor.execute(query)
+                    verificacao = self.cursor.fetchall()
+                    for j in verificacao:
+                        nomeCartas.append(j[1])
+                return(nomeCartas)
+
+        except db_error:
+            return("=====> [ERRO NO BANCO] Nao foi possivel exibir o album.")

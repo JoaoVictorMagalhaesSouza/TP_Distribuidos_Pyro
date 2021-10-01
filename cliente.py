@@ -148,10 +148,6 @@ class Cliente:
                                 print(f"{j}) {i}")
                                 j += 1
 
-                            """
-                                Tratar aqui depois: deixar o cara digitar apenas uma das cartas mostradas.
-                            """
-                            #print(f"{myCards}    {type(myCards)}")
                             escolhaCarta = input(
                                 "Digite o nome da carta que você quer inserir no álbum: ")
                             if (escolhaCarta in myCards):
@@ -161,7 +157,18 @@ class Cliente:
                                     "=====> [ERRO] Digite uma carta que você possui !")
                         print("")
                         print("")
-                    
+                    elif (escolha == "3"):
+                        respostaVisualizaAlbum = self.connection.visualizaAlbum(str(self.authIDAlbum))
+                        
+                        if (respostaVisualizaAlbum == 0):
+                            print("=====> Voce ainda nao possui cartas no album.")
+                        else:
+                            myAlbum = respostaVisualizaAlbum
+                            print(f"=====> As cartas do seu album sao: ")
+                            for i in myAlbum:
+                                print(f"{i}")
+                        print("")
+                        print("")                    
         
 
         
