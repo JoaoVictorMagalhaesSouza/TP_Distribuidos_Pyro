@@ -38,6 +38,9 @@ class Cliente:
                 senha = input("Digite sua senha: ")
                 nome = input("Digite seu nome: ")
                 email = input("Digite seu email: ")
+                """
+                    Agora a gente chama diretamente o método.
+                """
                 print(self.connection.cadastro("50000",nick,senha,nome,email))
                 print("")
                 print("")
@@ -48,6 +51,9 @@ class Cliente:
                 nick = input("Digite seu nickname: ")
                 senha = input("Digite sua senha: ")               
                 #print(self.connection.login(nick,senha))
+                """
+                    Agora a gente chama diretamente o método.
+                """
                 dadosLogin = self.connection.login(nick,senha)
                 #print(dadosLogin)
                 if (dadosLogin != 0):
