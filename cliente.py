@@ -1,5 +1,10 @@
 import Pyro4
 
-ipAddressServer = "127.0.0.1"
-teste = Pyro4.core.Proxy('PYRO:Servidor@' + ipAddressServer + ':9090')
-print(teste.soma())
+class Cliente:
+
+    def __init__(self,ip):        
+        ######## Configurações do servidor e da conexão. #####################
+        ipAddressServer = ip
+        connection = Pyro4.core.Proxy('PYRO:Servidor@' + ipAddressServer + ':9090')
+        ######################################################################
+        print(connection.soma(1,2))
