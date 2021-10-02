@@ -2,43 +2,67 @@ import Pyro4
 from Pyro4.core import expose
 import mysql.connector
 from mysql.connector import Error as db_error
+from threading import Timer
 
-class Server:    
-    
-    def __init__(self) :
+
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
+
+class Server:
+    def __init__(self):
         try:
+            self.rt = None
             self.connection = mysql.connector.connect(host='localhost',
-                                                        database='bd_distribuidos',
-                                                        user='root',
-                                                        password='JVictor@00')
+                                                      database='bd_distribuidos',
+                                                      user='root',
+                                                      password='1234')
 
-            if self.connection.is_connected():                        
-                        self.cursor = self.connection.cursor()
-                        db_Info = self.connection.get_server_info()
-                        print("Connected to MySQL database... MySQL Server version on ", db_Info)
+            if self.connection.is_connected():
+                self.cursor = self.connection.cursor()
+                db_Info = self.connection.get_server_info()
+                print("Connected to MySQL database... MySQL Server version on ", db_Info)
         except db_error:
-                    return("Error while connecting to MySQL", db_error) 
-        
+            print("Error while connecting to MySQL", db_error)
+
     def startServer(self):
-        
-            
-            
-            try:
-                
-                Pyro4.Daemon.serveSimple({          #Definindo as configurações do servidor
+        try:
+
+            Pyro4.Daemon.serveSimple({  # Definindo as configurações do servidor
                 Server: 'Servidor',
-                }, host="127.0.0.1", port=9090, ns=False, verbose=True)    
-                """
+            }, host="127.0.0.1", port=9090, ns=False, verbose=True)
+            """
                     Ele cria um loop de serviço automaticamente.
                 """
-                    
-            except:
-                return "Erro ao iniciar a conexão do Server."
-        
-
+        except:
+            return "Erro ao iniciar a conexão do Server."
 
     ##################### Funcionalidades do sistema ################################
-    @Pyro4.expose    #Define as quais classes, métodos e atributos podem ser acessados remotamente.
+
+    # Define as quais classes, métodos e atributos podem ser acessados remotamente.
+    @Pyro4.expose
     def cadastro(self, coins, nickname, password, nome, email):
         try:
             """
@@ -67,7 +91,8 @@ class Server:
                 """
 
                 #cursor = self.connection.cursor()
-                self.cursor.execute("SELECT MAX(idAlbum) AS ultimoValor FROM album")
+                self.cursor.execute(
+                    "SELECT MAX(idAlbum) AS ultimoValor FROM album")
                 resultado = self.cursor.fetchall()
                 for id in resultado:
                     resultado = id[0]
@@ -126,16 +151,50 @@ class Server:
                     PARA PODER CARREGAR O ALBUM DESSE USUÁRIO, SUA MOCHILA E DEMAIS INFORMAÇÕES.
                 """
                 # print(resultados)
+                # ganha coins a cada 2 min
+                if (self.rt != None):
+                    self.rt.stop()
+                self.rt = RepeatedTimer(20, self.getCoins, nickname)
                 return(tuple(resultados[0]))
                 # return("=====> Login realizado com sucesso !")
             else:
                 return(0)
         except db_error:
-            return(0)    
+            return(0)
+
+    @Pyro4.expose
+    def logout(self):
+        self.rt.stop()
+        self.rt = None
+
+    @Pyro4.expose
+    def showCoins(self, nickname):
+        try:
+            query = f'SELECT coins from Usuario WHERE nickname ="{nickname}";'
+            self.cursor.execute(query)
+            coins = self.cursor.fetchall()[0][0]
+            return coins
+        except db_error:
+            return(db_error)
+    # esse método não precisa ser exportado.
+
+    def getCoins(self, nickname):
+        try:
+            # pegar idUser a partir do nickname
+            queryRecebeId = f"SELECT idUsuario from Usuario WHERE nickname = '{nickname}';"
+            self.cursor.execute(queryRecebeId)
+            verificacao = self.cursor.fetchall()
+            if (len(verificacao) > 0):
+                idUser = verificacao[0][0]
+                queryInsereCoins = f"UPDATE Usuario SET coins = coins + 25 WHERE idUsuario = '{idUser}';"
+                result = self.cursor.execute(queryInsereCoins)
+                self.connection.commit()
+                print(f'Usuario {nickname} recebeu 25 coins')
+        except db_error:
+            return(db_error)
 
     @Pyro4.expose
     def compraCartaLoja(self, coinsRemovidas, idMochila, idUser, cartas):
-
         # <>loja - -> tipo compra(5 cartas randons) --> tem que criar mochila_has_carta com o id
         # gerado randomicamente, além disso deve retirar a quantidade de coins.
         # <INSERT INTO mochila_has_carta VALUE(resultados[6], random, 1);>
@@ -148,7 +207,7 @@ class Server:
                 queryVerificaCartaMochila = """SELECT * FROM mochila_has_carta WHERE (Mochila_idMochila = '"""+str(
                     idMochila)+"' and Carta_idCarta = '"+str(i)+"');"
                 #print(f"Q1: {queryVerificaCartaMochila}")
-                
+
                 self.cursor.execute(queryVerificaCartaMochila)
                 verificacao = self.cursor.fetchall()
 
@@ -172,8 +231,7 @@ class Server:
             return("=====> Cartas compradas com sucesso ! Verifique a mochila. ")
 
         except db_error:
-            return("=====> [ERRO NO BANCO] Erro ao comprar carta!")        
-        
+            return("=====> [ERRO NO BANCO] Erro ao comprar carta!")
 
     @Pyro4.expose
     def minhaMochila(self, idMochila):
@@ -188,7 +246,7 @@ class Server:
             nomeCartas = []
             for i in verificacao:
                 cartas.append(i[1])
-                #print(i)
+                # print(i)
 
             for i in cartas:
                 query = "SELECT * FROM carta WHERE (idCarta = '"+str(i)+"');"
@@ -207,6 +265,7 @@ class Server:
 
         except db_error:
             return("=====> [ERRO NO BANCO] Erro ao visualizar dados da mochila do usuário.")
+
     @Pyro4.expose
     def insereAlbum(self, idMochila, idAlbum, nomeCarta):
         try:
@@ -249,6 +308,7 @@ class Server:
                 return("=====> [ERRO] Carta ja esta no album.")
         except db_error:
             return("=====> [ERRO NO BANCO] Erro ao inserir carta no album.")
+
     @Pyro4.expose
     def visualizaAlbum(self, idAlbum):
         try:
@@ -278,7 +338,7 @@ class Server:
 
         except db_error:
             return("=====> [ERRO NO BANCO] Nao foi possivel exibir o album.")
-    
+
     @Pyro4.expose
     def deletaCarta(self, nomeCarta, idMochila):
         # <>deletar carta
@@ -313,6 +373,7 @@ class Server:
                     return("=====> [ERRO] Você nao tem nenhuma carta dessas!")
             except db_error:
                 return("=====> [ERRO NO BANCO] Erro na delecao da carta")
+
     @Pyro4.expose
     def retiraCartaAlbum(self, nomeCarta, idMochila, idAlbum):
         # <>retirar carta do album --> incremnta do mochila_has_carta e faz is_ocupado ser 0
@@ -333,7 +394,8 @@ class Server:
                 queryExisteSlotOcupado = f"SELECT is_ocupado FROM Album_has_Slot WHERE Album_idAlbum = '{idAlbum}' and Slot_Carta_idCarta = '{idCarta}';"
                 #cursor = connection.cursor()
                 self.cursor.execute(queryExisteSlotOcupado)
-                verificacao = self.cursor.fetchall()  # verificação indica se usuário tem a carta como 1
+                # verificação indica se usuário tem a carta como 1
+                verificacao = self.cursor.fetchall()
                 if (verificacao[0][0] == 1):
                     #print('Eu tenho essa carta!')
                     queryRetiraAlbum = f"UPDATE Album_has_Slot SET is_ocupado = 0 WHERE Album_idAlbum = '{idAlbum}' and Slot_Carta_idCarta = '{idCarta}';"
@@ -352,7 +414,7 @@ class Server:
                 return("=====> [ERRO NO BANCO]Erro ao retirar carta do album")
         else:
             return('=====> [ERRO] Essa carta nao existe!')
-    
+
     @Pyro4.expose
     def colocaCartaLeilao(self, idMochila, carta, precoCarta):
         try:
@@ -414,7 +476,7 @@ class Server:
                 return("=====> Carta leiloada com sucesso. ")
         except db_error:
             return("=====> [ERRO NO BANCO]Erro ao anunciar carta no leilao!")
-    
+
     @Pyro4.expose
     def mostraCartasLeilao(self):
         try:
@@ -428,7 +490,7 @@ class Server:
             nomeAnunciante = []
             precoCarta = []
             ids = []
-            if(len(verificacao)==0):
+            if(len(verificacao) == 0):
                 return(0)
             else:
 
@@ -533,7 +595,7 @@ class Server:
 
         except db_error:
             return ("=====> [ERRO NO BANCO] Erro na transferencia entre as cartas.")
-    
+
     @Pyro4.expose
     def retiraCartaLeilao(self, idMochila):
         try:
