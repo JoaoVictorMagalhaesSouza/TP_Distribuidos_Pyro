@@ -154,7 +154,7 @@ class Server:
                 # ganha coins a cada 2 min
                 if (self.rt != None):
                     self.rt.stop()
-                self.rt = RepeatedTimer(20, self.getCoins, nickname)
+                self.rt = RepeatedTimer(120, self.getCoins, nickname)
                 return(tuple(resultados[0]))
                 # return("=====> Login realizado com sucesso !")
             else:
