@@ -9,6 +9,9 @@ class Cliente:
         ipAddressServer = ip
         self.connection = Pyro4.core.Proxy(
             'PYRO:Servidor@' + ipAddressServer + ':9090')
+        #########################################################
+
+        
         """
             Criei esses atributos abaixo p/ facilitar . auth = authenticated.
         """
@@ -48,7 +51,7 @@ class Cliente:
                     Agora a gente chama diretamente o método.
                 """
                 print(self.connection.cadastro(
-                    "50000", nick, senha, nome, email))
+                    "200", nick, senha, nome, email))
                 print("\n\n")
             elif (escolha == "2"):
                 print(

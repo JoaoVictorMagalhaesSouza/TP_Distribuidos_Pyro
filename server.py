@@ -38,7 +38,7 @@ class Server:
             self.connection = mysql.connector.connect(host='localhost',
                                                       database='bd_distribuidos',
                                                       user='root',
-                                                      password='1234')
+                                                      password='JVictor@00')
 
             if self.connection.is_connected():
                 self.cursor = self.connection.cursor()
